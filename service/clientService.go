@@ -45,8 +45,9 @@ func (cs *ClientService) LidarComTransacao(transaction *models.TransacaoRequDto,
 			return 0, 0, errors.New("422")
 		}
 
-		newValue := saldo - int64(transaction.Valor)
-		err = cs.repo.Debitar(uint16(idInt), newValue)
+		debito := int64(transaction.Valor)
+		newValue := saldo - debito
+		err = cs.repo.Debitar(uint16(idInt), newValue, debito, transaction.Descricao)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -58,8 +59,9 @@ func (cs *ClientService) LidarComTransacao(transaction *models.TransacaoRequDto,
 			return 0, 0, err
 		}
 
-		newValue := saldo + int64(transaction.Valor)
-		err = cs.repo.Creditar(uint16(idInt), newValue)
+		credito := int64(transaction.Valor)
+		newValue := saldo + credito
+		err = cs.repo.Creditar(uint16(idInt), newValue, credito, transaction.Descricao)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -68,4 +70,26 @@ func (cs *ClientService) LidarComTransacao(transaction *models.TransacaoRequDto,
 	}
 
 	return 0, 0, errors.New("invalid type")
+}
+
+func (cs *ClientService) GetHistorico(id string) (models.Historico, error) {
+	idUint, err := strconv.ParseUint(id, 10, 16)
+	if err != nil {
+		return models.Historico{}, nil
+	}
+
+	saldo, err := cs.repo.GetSaldo(uint16(idUint))
+	if err != nil {
+		return models.Historico{}, nil
+	}
+
+	transacoes, err := cs.repo.GetTransacoes(uint16(idUint))
+	if err != nil {
+		return models.Historico{}, nil
+	}
+
+	return models.Historico{
+		Saldo:      saldo,
+		Transacoes: transacoes,
+	}, nil
 }

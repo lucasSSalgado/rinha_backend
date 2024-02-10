@@ -65,5 +65,11 @@ func (c *ClientController) extrato(ctx *fiber.Ctx) error {
 	if err := c.serv.FindClientById(imutableId); err != nil {
 		return ctx.SendStatus(404)
 	}
-	return nil
+
+	historico, err := c.serv.GetHistorico(imutableId)
+	if err != nil {
+		return ctx.SendStatus(404)
+	}
+
+	return ctx.JSON(historico)
 }

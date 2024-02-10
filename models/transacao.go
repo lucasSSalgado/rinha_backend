@@ -28,5 +28,5 @@ type UltTransacoes struct {
 	Valor       int       `json:"valor"`
 	Tipo        string    `json:"tipo"`
 	Descricao   string    `json:"descricao"`
-	RealizadoEm time.Time `json:"realizada_em"`
+	RealizadoEm time.Time `db:"realizada_em"`
 }

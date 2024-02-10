@@ -1,5 +1,0 @@
-CREATE TABLE cliente  (
-    user_id SMALLINT PRIMARY KEY,
-    limite INTEGER,
-    saldo INTEGER 
-);
