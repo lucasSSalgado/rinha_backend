@@ -1,12 +1,13 @@
 package infra
 
 import (
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	"context"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func CreateConnection() *sqlx.DB {
-	db, err := sqlx.Connect("postgres", "host=localhost port=5432 user=postgres password=example dbname=postgres sslmode=disable")
+func CreateConnection() *pgxpool.Pool {
+	db, err := pgxpool.New(context.Background(), "host=localhost port=5432 user=postgres password=example dbname=postgres sslmode=disable")
 	if err != nil {
 		panic(err)
 	}

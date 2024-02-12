@@ -26,7 +26,7 @@ func (c *ClientController) InitRoutes() {
 	cli.Post("/:id/transacoes", c.transacoes)
 	cli.Get("/:id/extrato", c.extrato)
 
-	app.Listen(":9999")
+	app.Listen(":8080")
 }
 
 func (c *ClientController) transacoes(ctx *fiber.Ctx) error {
@@ -37,19 +37,16 @@ func (c *ClientController) transacoes(ctx *fiber.Ctx) error {
 
 	var transaction models.TransacaoRequDto
 	if err := ctx.BodyParser(&transaction); err != nil {
-		return err
+		return ctx.SendStatus(422)
 	}
 
 	if err := util.CheckFields(&transaction); err != nil {
-		return err
+		return ctx.SendStatus(422)
 	}
 
 	limite, saldo, err := c.serv.LidarComTransacao(&transaction, imutableId)
-	if err != nil && err.Error() == "412" {
-		return ctx.SendStatus(412)
-	}
 	if err != nil {
-		return err
+		return ctx.SendStatus(422)
 	}
 
 	return ctx.JSON(
@@ -68,7 +65,7 @@ func (c *ClientController) extrato(ctx *fiber.Ctx) error {
 
 	historico, err := c.serv.GetHistorico(imutableId)
 	if err != nil {
-		return ctx.SendStatus(404)
+		return ctx.SendStatus(412)
 	}
 
 	return ctx.JSON(historico)
