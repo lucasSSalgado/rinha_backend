@@ -10,7 +10,7 @@ func CheckFields(dto *models.TransacaoRequDto) error {
 		return errors.New("")
 	}
 
-	if len(dto.Descricao) > 11 {
+	if len(dto.Descricao) >= 11 {
 		return errors.New("")
 	}
 

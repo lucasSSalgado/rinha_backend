@@ -46,8 +46,13 @@ func (c *ClientRepository) Debitar(id uint16, newValue int64, debito int64, desc
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(context.Background(), "UPDATE cliente SET saldo = $1 WHERE user_id = $2", newValue, id)
 	defer tx.Rollback(context.Background())
+
+	_, err = tx.Exec(
+		context.Background(),
+		"UPDATE cliente SET saldo = $1 WHERE user_id = $2",
+		newValue, id,
+	)
 	if err != nil {
 		return err
 	}
@@ -72,9 +77,13 @@ func (c *ClientRepository) Creditar(id uint16, newValue int64, credito int64, de
 	if err != nil {
 		return err
 	}
-
 	defer tx.Rollback(context.Background())
-	_, err = tx.Exec(context.Background(), "UPDATE cliente SET saldo = $1 WHERE user_id = $2", newValue, id)
+
+	_, err = tx.Exec(
+		context.Background(),
+		"UPDATE cliente SET saldo = $1 WHERE user_id = $2",
+		newValue, id,
+	)
 	if err != nil {
 		return err
 	}
