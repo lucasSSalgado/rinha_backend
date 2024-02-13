@@ -47,12 +47,7 @@ func (cs *ClientService) LidarComTransacao(transaction *models.TransacaoRequDto,
 
 		debito := int64(transaction.Valor)
 		newValue := saldo - debito
-		err = cs.repo.Debitar(uint16(idInt), newValue)
-		if err != nil {
-			return 0, 0, err
-		}
-
-		err = cs.repo.SaveTransaction(uint16(idInt), debito, "d", transaction.Descricao)
+		err = cs.repo.Debitar(uint16(idInt), newValue, debito, transaction.Descricao)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -67,12 +62,7 @@ func (cs *ClientService) LidarComTransacao(transaction *models.TransacaoRequDto,
 
 		credito := int64(transaction.Valor)
 		newValue := saldo + credito
-		err = cs.repo.Creditar(uint16(idInt), newValue)
-		if err != nil {
-			return 0, 0, err
-		}
-
-		err = cs.repo.SaveTransaction(uint16(idInt), credito, "c", transaction.Descricao)
+		err = cs.repo.Creditar(uint16(idInt), newValue, credito, transaction.Descricao)
 		if err != nil {
 			return 0, 0, err
 		}

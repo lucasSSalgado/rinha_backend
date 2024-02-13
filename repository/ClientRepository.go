@@ -5,6 +5,7 @@ import (
 	"rinha/models"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -41,8 +42,14 @@ func (c *ClientRepository) GetLimitAndSaldoByClientId(id uint16, value uint32) (
 	return saldo, limite, nil
 }
 
-func (c *ClientRepository) Debitar(id uint16, newValue int64) error {
-	_, err := c.db.Exec(
+func (c *ClientRepository) Debitar(id uint16, newValue int64, debito int64, descricao string) error {
+	tx, err := c.db.Begin(context.Background())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
+
+	_, err = tx.Exec(
 		context.Background(),
 		"UPDATE cliente SET saldo = $1 WHERE user_id = $2",
 		newValue, id,
@@ -51,29 +58,67 @@ func (c *ClientRepository) Debitar(id uint16, newValue int64) error {
 		return err
 	}
 
-	return nil
-}
+	batch := &pgx.Batch{}
 
-func (c *ClientRepository) Creditar(id uint16, newValue int64) error {
-	_, err := c.db.Exec(
-		context.Background(),
-		"UPDATE cliente SET saldo = $1 WHERE user_id = $2",
-		newValue, id,
-	)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *ClientRepository) SaveTransaction(id uint16, value int64, tipo string, descricao string) error {
-
-	_, err := c.db.Exec(
-		context.Background(),
+	batch.Queue(
 		"INSERT INTO transacoes (user_id, valor, tipo, descricao, realizada_em) VALUES ($1, $2, $3, $4, $5)",
-		id, value, tipo, descricao, time.Now().UTC(),
+		id, debito, "d", descricao, time.Now().UTC(),
 	)
+
+	results := tx.SendBatch(context.Background(), batch)
+	_, err = results.Exec()
+	if err != nil {
+		return err
+	}
+
+	err = results.Close()
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit(context.Background())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *ClientRepository) Creditar(id uint16, newValue int64, credito int64, descricao string) error {
+	tx, err := c.db.Begin(context.Background())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
+
+	_, err = tx.Exec(
+		context.Background(),
+		"UPDATE cliente SET saldo = $1 WHERE user_id = $2",
+		newValue, id,
+	)
+	if err != nil {
+		return err
+	}
+
+	batch := &pgx.Batch{}
+
+	batch.Queue(
+		"INSERT INTO transacoes (user_id, valor, tipo, descricao, realizada_em) VALUES ($1, $2, $3, $4, $5)",
+		id, credito, "c", descricao, time.Now().UTC(),
+	)
+
+	results := tx.SendBatch(context.Background(), batch)
+	_, err = results.Exec()
+	if err != nil {
+		return err
+	}
+
+	err = results.Close()
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit(context.Background())
 	if err != nil {
 		return err
 	}
