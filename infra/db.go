@@ -7,7 +7,7 @@ import (
 )
 
 func CreateConnection() *pgxpool.Pool {
-	config, err := pgxpool.ParseConfig("host=postgres port=5432 user=postgres password=example dbname=postgres sslmode=disable")
+	config, err := pgxpool.ParseConfig("host=localhost port=5432 user=postgres password=example dbname=postgres sslmode=disable")
 	if err != nil {
 		panic(err)
 	}
