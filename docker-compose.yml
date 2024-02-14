@@ -9,6 +9,11 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.4"
+          memory: "50MB"
 
   api2:
     build: . 
@@ -17,7 +22,11 @@ services:
         condition: service_healthy
     networks:
       - app-network
-
+    deploy:
+      resources:
+        limits:
+          cpus: "0.4"
+          memory: "50MB"
 
   postgres:
     image: postgres
@@ -26,8 +35,6 @@ services:
       - POSTGRES_PASSWORD=example
     volumes:
       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "5432:5432"
     networks:
       - app-network
     healthcheck:
@@ -36,6 +43,11 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "300MB"
 
   nginx:
     image: nginx:latest
@@ -48,6 +60,11 @@ services:
       - "9999:9999"
     networks:
       - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: "50MB"
 
 networks:
   app-network:
