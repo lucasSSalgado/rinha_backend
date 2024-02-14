@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"rinha/models"
 	"time"
 
@@ -22,7 +23,11 @@ func NewClientRepository(db *pgxpool.Pool) *ClientRepository {
 func (c *ClientRepository) CheckIfClientExist(id uint16) error {
 	var exists uint16
 
-	rows := c.db.QueryRow(context.Background(), "SELECT user_id FROM cliente WHERE user_id = $1", id)
+	rows := c.db.QueryRow(
+		context.Background(),
+		"SELECT user_id FROM cliente WHERE user_id = $1",
+		id,
+	)
 	err := rows.Scan(&exists)
 	if err != nil {
 		return err
@@ -31,99 +36,58 @@ func (c *ClientRepository) CheckIfClientExist(id uint16) error {
 	return nil
 }
 
-func (c *ClientRepository) GetLimitAndSaldoByClientId(id uint16, value uint32) (int64, uint64, error) {
-	var saldo int64
+func (c *ClientRepository) AddTransaction(id uint64, transaction *models.TransacaoRequDto) (uint64, int64, error) {
+	tx, err := c.db.Begin(context.Background())
+	if err != nil {
+		return 0, 0, err
+	}
+	defer tx.Rollback(context.Background())
+
 	var limite uint64
-	err := c.db.QueryRow(context.Background(), "SELECT limite, saldo FROM cliente WHERE user_id = $1", id).Scan(&limite, &saldo)
+	var saldo int64
+	err = tx.QueryRow(
+		context.Background(),
+		"SELECT limite, saldo FROM cliente WHERE user_id = $1 FOR UPDATE",
+		id,
+	).Scan(&limite, &saldo)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	return saldo, limite, nil
-}
-
-func (c *ClientRepository) Debitar(id uint16, newValue int64, debito int64, descricao string) error {
-	tx, err := c.db.Begin(context.Background())
-	if err != nil {
-		return err
+	var newSaldo int64
+	if transaction.Tipo == "c" {
+		newSaldo = int64(transaction.Valor) + saldo
+	} else {
+		newSaldo = saldo - int64(transaction.Valor)
 	}
-	defer tx.Rollback(context.Background())
 
-	_, err = tx.Exec(
-		context.Background(),
-		"UPDATE cliente SET saldo = $1 WHERE user_id = $2",
-		newValue, id,
-	)
-	if err != nil {
-		return err
+	if (newSaldo + int64(limite)) < 0 {
+		return 0, 0, errors.New("422")
 	}
 
 	batch := &pgx.Batch{}
-
+	batch.Queue(
+		"UPDATE cliente SET saldo = $1 WHERE user_id = $2",
+		newSaldo, id,
+	)
 	batch.Queue(
 		"INSERT INTO transacoes (user_id, valor, tipo, descricao, realizada_em) VALUES ($1, $2, $3, $4, $5)",
-		id, debito, "d", descricao, time.Now().UTC(),
+		id, transaction.Valor, transaction.Tipo, transaction.Descricao, time.Now().UTC(),
 	)
 
-	results := tx.SendBatch(context.Background(), batch)
-	_, err = results.Exec()
-	if err != nil {
-		return err
-	}
-
-	err = results.Close()
-	if err != nil {
-		return err
+	s := tx.SendBatch(
+		context.Background(),
+		batch,
+	)
+	if err := s.Close(); err != nil {
+		return 0, 0, err
 	}
 
 	err = tx.Commit(context.Background())
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
-
-	return nil
-}
-
-func (c *ClientRepository) Creditar(id uint16, newValue int64, credito int64, descricao string) error {
-	tx, err := c.db.Begin(context.Background())
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback(context.Background())
-
-	_, err = tx.Exec(
-		context.Background(),
-		"UPDATE cliente SET saldo = $1 WHERE user_id = $2",
-		newValue, id,
-	)
-	if err != nil {
-		return err
-	}
-
-	batch := &pgx.Batch{}
-
-	batch.Queue(
-		"INSERT INTO transacoes (user_id, valor, tipo, descricao, realizada_em) VALUES ($1, $2, $3, $4, $5)",
-		id, credito, "c", descricao, time.Now().UTC(),
-	)
-
-	results := tx.SendBatch(context.Background(), batch)
-	_, err = results.Exec()
-	if err != nil {
-		return err
-	}
-
-	err = results.Close()
-	if err != nil {
-		return err
-	}
-
-	err = tx.Commit(context.Background())
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return limite, newSaldo, nil
 }
 
 func (c *ClientRepository) GetTransacoes(id uint16) ([]models.UltTransacoes, error) {

@@ -35,42 +35,16 @@ func (cs *ClientService) LidarComTransacao(transaction *models.TransacaoRequDto,
 		return 0, 0, err
 	}
 
-	if transaction.Tipo == "d" {
-		saldo, limite, err := cs.repo.GetLimitAndSaldoByClientId(uint16(idInt), transaction.Valor)
-		if err != nil {
-			return 0, 0, err
-		}
-
-		if (saldo - int64(transaction.Valor)) < (int64(limite))*-1 {
-			return 0, 0, errors.New("422")
-		}
-
-		debito := int64(transaction.Valor)
-		newValue := saldo - debito
-		err = cs.repo.Debitar(uint16(idInt), newValue, debito, transaction.Descricao)
-		if err != nil {
-			return 0, 0, err
-		}
-
-		return limite, newValue, nil
-	}
-	if transaction.Tipo == "c" {
-		saldo, limite, err := cs.repo.GetLimitAndSaldoByClientId(uint16(idInt), transaction.Valor)
-		if err != nil {
-			return 0, 0, err
-		}
-
-		credito := int64(transaction.Valor)
-		newValue := saldo + credito
-		err = cs.repo.Creditar(uint16(idInt), newValue, credito, transaction.Descricao)
-		if err != nil {
-			return 0, 0, err
-		}
-
-		return limite, newValue, nil
+	if transaction.Tipo != "c" && transaction.Tipo != "d" {
+		return 0, 0, errors.New("invalid op")
 	}
 
-	return 0, 0, errors.New("invalid type")
+	limite, saldo, err := cs.repo.AddTransaction(idInt, transaction)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return limite, saldo, nil
 }
 
 func (cs *ClientService) GetHistorico(id string) (models.Historico, error) {
