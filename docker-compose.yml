@@ -13,7 +13,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "50MB"
+          memory: "40MB"
 
   api2:
     build: . 
@@ -26,7 +26,7 @@ services:
       resources:
         limits:
           cpus: "0.4"
-          memory: "50MB"
+          memory: "40MB"
 
   postgres:
     image: postgres
@@ -47,7 +47,7 @@ services:
       resources:
         limits:
           cpus: "0.5"
-          memory: "300MB"
+          memory: "320MB"
 
   nginx:
     image: nginx:latest
