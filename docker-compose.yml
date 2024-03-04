@@ -1,9 +1,8 @@
 # Use postgres/example user/password credentials
 version: '3.1'
-
 services:
   api1:
-    build: .
+    image: rinha:2.0.0 
     depends_on:
       postgres: 
         condition: service_healthy
@@ -16,7 +15,7 @@ services:
           memory: "50MB"
 
   api2:
-    build: . 
+    image: rinha:2.0.0 
     depends_on:
       postgres: 
         condition: service_healthy
@@ -29,7 +28,7 @@ services:
           memory: "50MB"
 
   postgres:
-    image: postgres
+    image: postgres:alpine
     hostname: postgres
     environment:
       - POSTGRES_PASSWORD=example
@@ -39,7 +38,7 @@ services:
       - app-network
     healthcheck:
       test: ["CMD-SHELL", "sh -c 'pg_isready -U admin -d postgres'"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 20
       start_period: 10s

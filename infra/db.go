@@ -12,8 +12,8 @@ func CreateConnection() *pgxpool.Pool {
 		panic(err)
 	}
 
-	config.MaxConns = int32(9)
-	config.MinConns = int32(9)
+	config.MaxConns = int32(7)
+	config.MinConns = int32(6)
 
 	db, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {

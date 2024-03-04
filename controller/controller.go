@@ -5,6 +5,7 @@ import (
 	"rinha/service"
 	"rinha/util"
 
+	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/utils"
 )
@@ -20,7 +21,11 @@ func NewControl(serv *service.ClientService) *ClientController {
 }
 
 func (c *ClientController) InitRoutes() {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		JSONEncoder: json.Marshal,
+		JSONDecoder: json.Unmarshal,
+	},
+	)
 	cli := app.Group("/clientes")
 
 	cli.Post("/:id/transacoes", c.transacoes)
@@ -31,6 +36,7 @@ func (c *ClientController) InitRoutes() {
 
 func (c *ClientController) transacoes(ctx *fiber.Ctx) error {
 	imutableId := utils.CopyString(ctx.Params("id"))
+
 	if err := c.serv.FindClientById(imutableId); err != nil {
 		return ctx.SendStatus(404)
 	}

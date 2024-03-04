@@ -5,27 +5,43 @@ import (
 	"rinha/models"
 	"rinha/repository"
 	"strconv"
+
+	"github.com/patrickmn/go-cache"
 )
 
 type ClientService struct {
-	repo *repository.ClientRepository
+	repo  *repository.ClientRepository
+	cache *cache.Cache
 }
 
-func NewClientService(repo *repository.ClientRepository) *ClientService {
+func NewClientService(repo *repository.ClientRepository, c *cache.Cache) *ClientService {
 	return &ClientService{
-		repo: repo,
+		repo:  repo,
+		cache: c,
 	}
 }
 
 func (cs *ClientService) FindClientById(id string) error {
+	val, exists := cs.cache.Get(id)
+	if exists {
+		if val.(bool) {
+			return nil
+		} else {
+			return errors.New("not found")
+		}
+	}
+
 	idInt, err := strconv.ParseUint(id, 10, 16)
 	if err != nil {
 		return err
 	}
 
 	if err := cs.repo.CheckIfClientExist(uint16(idInt)); err != nil {
+		cs.cache.Set(id, false, cache.NoExpiration)
 		return err
 	}
+
+	cs.cache.Set(id, true, cache.NoExpiration)
 	return nil
 }
 
