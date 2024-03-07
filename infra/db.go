@@ -7,13 +7,13 @@ import (
 )
 
 func CreateConnection() *pgxpool.Pool {
-	config, err := pgxpool.ParseConfig("host=postgres port=5432 user=postgres password=example dbname=postgres sslmode=disable")
+	config, err := pgxpool.ParseConfig("host=localhost port=5432 user=postgres password=example dbname=postgres sslmode=disable")
 	if err != nil {
 		panic(err)
 	}
 
-	config.MaxConns = int32(7)
-	config.MinConns = int32(6)
+	config.MaxConns = int32(50)
+	config.MinConns = int32(10)
 
 	db, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {

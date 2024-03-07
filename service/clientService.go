@@ -27,7 +27,7 @@ func (cs *ClientService) FindClientById(id string) error {
 		if val.(bool) {
 			return nil
 		} else {
-			return errors.New("not found")
+			return errors.New("")
 		}
 	}
 
@@ -45,22 +45,22 @@ func (cs *ClientService) FindClientById(id string) error {
 	return nil
 }
 
-func (cs *ClientService) LidarComTransacao(transaction *models.TransacaoRequDto, id string) (uint64, int64, error) {
+func (cs *ClientService) LidarComTransacao(transaction *models.TransacaoRequDto, id string) (*models.TransacaoRespDto, error) {
 	idInt, err := strconv.ParseUint(id, 10, 16)
 	if err != nil {
-		return 0, 0, err
+		return &models.TransacaoRespDto{}, err
 	}
 
 	if transaction.Tipo != "c" && transaction.Tipo != "d" {
-		return 0, 0, errors.New("invalid op")
+		return &models.TransacaoRespDto{}, errors.New("invalid op")
 	}
 
-	limite, saldo, err := cs.repo.AddTransaction(idInt, transaction)
+	resp, err := cs.repo.AddTransaction(idInt, transaction)
 	if err != nil {
-		return 0, 0, err
+		return &models.TransacaoRespDto{}, err
 	}
 
-	return limite, saldo, nil
+	return resp, nil
 }
 
 func (cs *ClientService) GetHistorico(id string) (models.Historico, error) {

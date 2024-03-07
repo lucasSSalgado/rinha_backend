@@ -50,17 +50,12 @@ func (c *ClientController) transacoes(ctx *fiber.Ctx) error {
 		return ctx.SendStatus(422)
 	}
 
-	limite, saldo, err := c.serv.LidarComTransacao(&transaction, imutableId)
+	resp, err := c.serv.LidarComTransacao(&transaction, imutableId)
 	if err != nil {
 		return ctx.SendStatus(422)
 	}
 
-	return ctx.JSON(
-		fiber.Map{
-			"limite": limite,
-			"saldo":  saldo,
-		},
-	)
+	return ctx.JSON(resp)
 }
 
 func (c *ClientController) extrato(ctx *fiber.Ctx) error {
